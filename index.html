@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MijnApp">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serre Ventilatie Calculator - Landbouw Free Cooling</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #1e5631;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .leaf-icon {
+            color: #27ae60;
+            font-size: 24px;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #2d5a3b;
+            border-bottom: 1px solid #1e5631;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 15px 20px;
+            color: white;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 14px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab.active {
+            background: #27ae60;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        h2 {
+            color: #1e5631;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        th {
+            background: #1e5631;
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+        
+        input, select {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #219653;
+        }
+        
+        .warning {
+            background: #f39c12;
+        }
+        
+        .error {
+            background: #e74c3c;
+        }
+        
+        .success {
+            background: #27ae60;
+        }
+        
+        .info-box {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e5631;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .status-ok { color: #27ae60; }
+        .status-warning { color: #f39c12; }
+        .status-error { color: #e74c3c; }
+        
+        footer {
+            background: #1e5631;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .leaf {
+            color: #27ae60;
+            font-size: 20px;
+            animation: leafGrow 2s infinite;
+        }
+        
+        @keyframes leafGrow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .serre-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .serre-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .serre-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .serre-card.active {
+            border-color: #27ae60;
+            background: #e8f5e9;
+        }
+        
+        .freecooling-box {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.3s;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tab-submenu {
+            display: flex;
+            background: #ecf0f1;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .tab-submenu button {
+            flex: 1;
+            background: #bdc3c7;
+            border-radius: 0;
+            margin: 0;
+        }
+        
+        .tab-submenu button.active {
+            background: #3498db;
+        }
+        
+        .unit-converter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .unit-converter input {
+            flex: 1;
+        }
+        
+        .unit-converter span {
+            white-space: nowrap;
+            font-weight: bold;
+            color: #1e5631;
+        }
+        
+        .conversion-info {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .crop-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .crop-option {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .crop-option:hover {
+            background: #e8f5e9;
+        }
+        
+        .crop-option.active {
+            background: #27ae60;
+            color: white;
+            border-color: #27ae60;
+        }
+        
+        .climate-graph {
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .temp-line {
+            position: absolute;
+            height: 3px;
+            background: #e74c3c;
+            bottom: 0;
+            transition: width 0.5s;
+        }
+        
+        .humidity-line {
+            position: absolute;
+            height: 3px;
+            background: #3498db;
+            bottom: 50px;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 Serre Ventilatie Calculator - Landbouw</h1>
+            <p>Free Cooling & Klimaatbeheersing voor Gewasoptimalisatie</p>
+            <div class="leaf-icon">🌿</div>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, 'serre')">🏠 Serre Type</button>
+            <button class="tab" onclick="openTab(event, 'gewas')">🌿 Gewas Selectie</button>
+            <button class="tab" onclick="openTab(event, 'debieten')">📊 Ventilatie Debieten</button>
+            <button class="tab" onclick="openTab(event, 'freecooling')">❄️ Free Cooling</button>
+            <button class="tab" onclick="openTab(event, 'klimaat')">🌡️ Klimaatbeheersing</button>
+            <button class="tab" onclick="openTab(event, 'energie')">⚡ Energie Analyse</button>
+            <button class="tab" onclick="openTab(event, 'rapport')">📄 Rapport</button>
+        </div>
+        
+        <!-- TAB 1: SERRE TYPE -->
+        <div id="serre" class="tab-content active">
+            <h2>🏠 Serre Specificaties</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Serre Type</h3>
+                    <div class="serre-type-grid">
+                        <div class="serre-card active" onclick="selectSerreType('venlo')">
+                            <h4>Venlo Serre</h4>
+                            <p>Standaard type met verticale zijwanden</p>
+                            <div class="status-ok">Geschikt voor meeste gewassen</div>
+                        </div>
+                        <div class="serre-card" onclick="selectSerreType('tunnel')">
+                            <h4>Tunnel Serre</h4>
+                            <p>Ronde vorm, lagere kosten</p>
+                            <div class="status-ok">Ideaal voor seizoensgebruik</div>
+                        </div>
+                        <div class="serre-card" onclick="selectSerreType('multi')">
+                            <h4>Multitunnel</h4>
+                            <p>Meerdere naast elkaar, grote oppervlakte</p>
+                            <div class="status-ok">Professionele teelt</div>
+                        </div>
+                        <div class="serre-card" onclick="selectSerreType('glas')">
+                            <h4>Glas Serre</h4>
+                            <p>Hoge lichtdoorlatendheid</p>
+                            <div class="status-ok">Jaarrond teelt</div>
+                        </div>
+                    </div>
+                    
+                    <label>Serre Lengte:</label>
+                    <input type="number" id="serreLengte" value="50" min="10" max="200"> m
+                    
+                    <label>Serre Breedte:</label>
+                    <input type="number" id="serreBreedte" value="10" min="5" max="50"> m
+                    
+                    <label>Serre Hoogte (nok):</label>
+                    <input type="number" id="serreHoogte" value="5" min="2" max="10"> m
+                </div>
+                
+                <div class="card">
+                    <h3>Oriëntatie & Locatie</h3>
+                    <label>Oriëntatie:</label>
+                    <select id="orientatie">
+                        <option value="noord-zuid">Noord-Zuid</option>
+                        <option value="oost-west">Oost-West</option>
+                        <option value="noordoost-zuidwest">Noordoost-Zuidwest</option>
+                    </select>
+                    
+                    <label>Regio/Zone:</label>
+                    <select id="regio">
+                        <option value="vlaanderen">Vlaanderen</option>
+                        <option value="wallonie">Wallonië</option>
+                        <option value="nederland">Nederland</option>
+                        <option value="kust">Kustregio</option>
+                        <option value="inland">Inland</option>
+                    </select>
+                    
+                    <label>Windzone:</label>
+                        <select id="windzone">
+                            <option value="I">Zone I (beschut)</option>
+                            <option value="II">Zone II (normaal)</option>
+                            <option value="III">Zone III (windrijk)</option>
+                            <option value="IV">Zone IV (zeer windrijk)</option>
+                        </select>
+                    
+                    <label>Schaduwfactor:</label>
+                    <input type="range" id="schaduw" min="0" max="100" value="20" oninput="updateSchaduw()">
+                    <span id="schaduwValue">20%</span>
+                </div>
+                
+                <div class="card">
+                    <h3>Materiaal & Constructie</h3>
+                    <label>Dakmateriaal:</label>
+                    <select id="dakMateriaal">
+                        <option value="glas">Glas (92% lichtdoorlatend)</option>
+                        <option value="dubbelglas">HR++ Glas (85%)</option>
+                        <option value="polycarbonaat">Polycarbonaat (88%)</option>
+                        <option value="folie">Plastic folie (85%)</option>
+                    </select>
+                    
+                    <label>Zijwanden:</label>
+                    <select id="zijwanden">
+                        <option value="glas">Glas</option>
+                        <option value="polycarbonaat">Polycarbonaat</option>
+                        <option value="folie">Folie</option>
+                        <option value="muur">Metselwerk</option>
+                    </select>
+                    
+                    <label>Isolatie:</label>
+                    <select id="isolatie">
+                        <option value="geen">Geen isolatie</option>
+                        <option value="basis">Basis (airlayer)</option>
+                        <option value="dubbel">Dubbele laag</option>
+                        <option value="geavanceerd">Geavanceerde isolatie</option>
+                    </select>
+                    
+                    <button onclick="berekenSerreVolume()" class="success">📏 Bereken Volume</button>
+                    
+                    <div id="volumeResultaat" style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                        <strong>Serre Volume:</strong> <span id="serreVolume">0</span> m³
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 2: GEWAS SELECTIE -->
+        <div id="gewas" class="tab-content">
+            <h2>🌿 Gewas Specificaties</h2>
+            <div class="info-box">
+                <strong>Selecteer uw hoofdgewas voor klimaat- en ventilatieberekeningen</strong><br>
+                Elk gewas heeft specifieke klimaatvereisten
+            </div>
+            
+            <div class="crop-selector">
+                <div class="crop-option active" onclick="selectCrop('tomaat')">
+                    <div style="font-size: 24px;">🍅</div>
+                    <div>Tomaat</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('komkommer')">
+                    <div style="font-size: 24px;">🥒</div>
+                    <div>Komkommer</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('paprika')">
+                    <div style="font-size: 24px;">🌶️</div>
+                    <div>Paprika</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('sla')">
+                    <div style="font-size: 24px;">🥬</div>
+                    <div>Sla</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('aardbei')">
+                    <div style="font-size: 24px;">🍓</div>
+                    <div>Aardbei</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('roos')">
+                    <div style="font-size: 24px;">🌹</div>
+                    <div>Siergewassen</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('kruiden')">
+                    <div style="font-size: 24px;">🌿</div>
+                    <div>Kruiden</div>
+                </div>
+                <div class="crop-option" onclick="selectCrop('anders')">
+                    <div style="font-size: 24px;">❓</div>
+                    <div>Anders</div>
+                </div>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Klimaatvereisten</h3>
+                    <div id="cropRequirements">
+                        <!-- Dynamisch ingevuld -->
+                        <p>Selecteer een gewas om de vereisten te zien</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Gewas Parameters</h3>
+                    <label>Teeltmethode:</label>
+                    <select id="teeltMethode">
+                        <option value="grond">Grondteelt</option>
+                        <option value="substraat">Substraatteelt</option>
+                        <option value="nft">NFT (Nutrient Film Technique)</option>
+                        <option value="drip">Druppelbevloeiing</option>
+                        <option value="aeroponics">Aeroponics</option>
+                    </select>
+                    
+                    <label>Plantdichtheid:</label>
+                    <input type="number" id="plantDichtheid" value="2.5" min="0.5" max="10" step="0.1"> planten/m²
+                    
+                    <label>Groeiperiode:</label>
+                    <select id="groeiPeriode">
+                        <option value="jaarrond">Jaarrond teelt</option>
+                        <option value="voorjaar">Voorjaar (mrt-jun)</option>
+                        <option value="zomer">Zomer (jun-sep)</option>
+                        <option value="najaar">Najaar (sep-dec)</option>
+                        <option value="winter">Winter (dec-mrt)</option>
+                    </select>
+                    
+                    <label>CO₂ verrijking:</label>
+                    <select id="co2Verrijking">
+                        <option value="geen">Geen</option>
+                        <option value="beperkt">Beperkt (800 ppm)</option>
+                        <option value="optimaal">Optimaal (1000 ppm)</option>
+                        <option value="hoog">Hoog (1200 ppm)</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>Klimaatgrafiek</h3>
+                    <div class="climate-graph" id="climateGraph">
+                        <div class="temp-line" id="tempLine" style="width: 0%;"></div>
+                        <div class="humidity-line" id="humidityLine" style="width: 0%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <div>
+                            <span style="color: #e74c3c;">● Temperatuur</span><br>
+                            Doel: <span id="targetTemp">22°C</span>
+                        </div>
+                        <div>
+                            <span style="color: #3498db;">● Vochtigheid</span><br>
+                            Doel: <span id="targetHumidity">75%</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="updateClimateGraph()" style="margin-top: 15px;">🔄 Update Grafiek</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 3: DEBIETEN -->
+        <div id="debieten" class="tab-content">
+            <h2>📊 Ventilatie Debieten voor Serres</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Ventilatie Systemen</h3>
+                    <label>Type ventilatie:</label>
+                    <select id="ventilatieType" onchange="updateVentilatieType()">
+                        <option value="natuurlijk">Natuurlijke ventilatie (ramen)</option>
+                        <option value="mechanisch">Mechanische ventilatie (ventilatoren)</option>
+                        <option value="combinatie">Combinatie (ramen + ventilatoren)</option>
+                        <option value="hoogfreq">Hoogfrequente ventilatie</option>
+                    </select>
+                    
+                    <label>Ventilatoren per zijde:</label>
+                    <input type="number" id="ventilatorenAantal" value="4" min="1" max="20">
+                    
+                    <label>Ventilator capaciteit:</label>
+                    <input type="number" id="ventilatorCapaciteit" value="15000" min="1000" max="50000"> m³/h
+                    
+                    <label>Ramen per zijde:</label>
+                    <input type="number" id="ramenAantal" value="10" min="0" max="50">
+                    
+                    <label>Raam opening:</label>
+                    <input type="number" id="raamOpening" value="0.5" min="0.1" max="1" step="0.1"> m
+                </div>
+                
+                <div class="card">
+                    <h3>Debieten Berekening</h3>
+                    <label>Luchtwisselingen per uur:</label>
+                    <input type="number" id="luchtwisselingen" value="30" min="5" max="100" onchange="berekenVentilatie()"> /h
+                    <small>Advies: 30-60 voor actieve groei</small>
+                    
+                    <label>Windcorrectie factor:</label>
+                    <select id="windFactor" onchange="berekenVentilatie()">
+                        <option value="0.7">Beschut (0.7)</option>
+                        <option value="1.0" selected>Normaal (1.0)</option>
+                        <option value="1.3">Windrijk (1.3)</option>
+                        <option value="1.5">Zeer windrijk (1.5)</option>
+                    </select>
+                    
+                    <label>Temperatuurverschil:</label>
+                    <input type="number" id="tempVerschilVent" value="5" min="1" max="20" onchange="berekenVentilatie()"> °C
+                    
+                    <button onclick="berekenVentilatie()" class="success">🌬️ Bereken Ventilatie</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Resultaten</h3>
+                    <div id="ventilatieResultaten" style="padding: 15px;">
+                        <p>Benodigd totaal debiet: <strong id="totaalDebiet">0</strong> m³/h</p>
+                        <p>Natuurlijke ventilatie capaciteit: <strong id="natuurlijkDebiet">0</strong> m³/h</p>
+                        <p>Mechanische ventilatie nodig: <strong id="mechanischDebiet">0</strong> m³/h</p>
+                        <p>Aanbevolen ventilator diameter: <strong id="ventilatorDiameter">0</strong> mm</p>
+                        <p>Specifiek debiet: <strong id="specifiekDebiet">0</strong> m³/h/m²</p>
+                    </div>
+                    
+                    <div id="ventilatieStatus" style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                        <!-- Status wordt hier geplaatst -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Ventilatie Schema</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ventilatie Type</th>
+                            <th>Min. Debiet</th>
+                            <th>Max. Debiet</th>
+                            <th>Advies voor Gewas</th>
+                            <th>Energieverbruik</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Natuurlijk (ramen)</td>
+                            <td>5 wisselingen/h</td>
+                            <td>15 wisselingen/h</td>
+                            <td>Voorjaar/najaar</td>
+                            <td>0 kWh</td>
+                        </tr>
+                        <tr>
+                            <td>Mechanisch</td>
+                            <td>20 wisselingen/h</td>
+                            <td>60 wisselingen/h</td>
+                            <td>Zomer, hoge belasting</td>
+                            <td>0.5-2 kW</td>
+                        </tr>
+                        <tr>
+                            <td>Hoogfrequent</td>
+                            <td>40 wisselingen/h</td>
+                            <td>100 wisselingen/h</td>
+                            <td>Optimale groei</td>
+                            <td>2-5 kW</td>
+                        </tr>
+                        <tr>
+                            <td>Pad & Fan</td>
+                            <td>30 wisselingen/h</td>
+                            <td>80 wisselingen/h</td>
+                            <td>Klimaatbeheersing</td>
+                            <td>1-3 kW</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- TAB 4: FREE COOLING -->
+        <div id="freecooling" class="tab-content">
+            <h2>❄️ Free Cooling voor Serres</h2>
+            
+            <div class="freecooling-box">
+                <h3>🌙 Nachtkoeling & Free Cooling</h3>
+                <p>Gebruik nachtelijke koelte om overdag te koelen. Essentieel voor serre klimaatbeheersing!</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Free Cooling Parameters</h3>
+                    
+                    <label>Koelvermogen nodig:</label>
+                    <div class="unit-converter">
+                        <input type="number" id="koelVermogenBTU" value="50000" min="10000" max="500000" step="1000" oninput="updateKoelvermogenFromBTU()">
+                        <span>BTU/h</span>
+                    </div>
+                    
+                    <label>Koelvermogen in kW:</label>
+                    <div class="unit-converter">
+                        <input type="number" id="koelVermogenkW" value="14.65" min="3" max="150" step="0.1" oninput="updateKoelvermogenFromkW()">
+                        <span>kW</span>
+                    </div>
+                    
+                    <div class="conversion-info">
+                        <strong>📐 Omrekening koelvermogen:</strong><br>
+                        1 BTU/h = 0.29307107 × 10⁻³ kW = 0.00029307107 kW<br>
+                        Voorbeeld: 50.000 BTU/h × 0.00029307107 = 14,6535535 kW ≈ 14,65 kW
+                    </div>
+                    
+                    <label>Temperatuurverschil nacht/dag:</label>
+                    <input type="number" id="tempVerschilFC" value="10" min="3" max="20" step="0.5" onchange="berekenFreeCooling()"> °C
+                    
+                    <label>Koelperiode per dag:</label>
+                    <input type="number" id="koelUren" value="8" min="1" max="24" onchange="berekenFreeCooling()"> uren
+                </div>
+                
+                <div class="card">
+                    <h3>Nachtventilatie Strategie</h3>
+                    <label>Nachtdebiet multiplier:</label>
+                    <input type="range" id="nachtMultiplier" min="1.5" max="5" step="0.5" value="3" oninput="updateNachtMultiplier()">
+                    <span id="nachtMultiplierValue">3.0x</span>
+                    <small>Hoe hoger, hoe meer free cooling potentieel</small>
+                    
+                    <label>Nachtventilatie start:</label>
+                    <input type="time" id="nachtStart" value="22:00">
+                    
+                    <label>Nachtventilatie einde:</label>
+                    <input type="time" id="nachtEinde" value="06:00">
+                    
+                    <label>Minimum buitentemperatuur:</label>
+                    <input type="number" id="minBuitenTemp" value="12" min="0" max="25"> °C
+                    
+                    <label>Pad & Fan systeem:</label>
+                    <select id="padFan">
+                        <option value="geen">Geen</option>
+                        <option value="basis">Basis systeem</option>
+                        <option value="geavanceerd">Geavanceerd met recirculatie</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>Free Cooling Resultaten</h3>
+                    <div id="freecoolingResultaten" style="padding: 15px;">
+                        <p>Nachtdebiet nodig: <strong id="nachtDebiet">-</strong> m³/h</p>
+                        <p>Dagdebiet: <strong id="dagDebiet">-</strong> m³/h</p>
+                        <p>Aanbevolen ventilator diameter: <strong id="fcDiameter">-</strong> mm</p>
+                        <p>Koelenergie per dag: <strong id="koelEnergie">-</strong> kWh</p>
+                        <p>Potentiële besparing: <strong id="fcBesparing">-</strong> €/jaar</p>
+                        <p>CO₂ reductie: <strong id="co2Reductie">-</strong> kg/jaar</p>
+                    </div>
+                    
+                    <div id="fcAdvies" style="margin-top: 15px; padding: 10px; background: #e8f6f3; border-radius: 5px;">
+                        <!-- Advies wordt hier gegenereerd -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Kosten-baten Analyse Free Cooling</h3>
+                <div class="grid">
+                    <div>
+                        <h4>Investering</h4>
+                        <label>Meerprijs grotere ventilatoren:</label>
+                        <input type="number" id="meerprijsVentilatoren" value="2000" min="0" max="20000"> €
+                        
+                        <label>Kosten pad & fan systeem:</label>
+                        <input type="number" id="kostenPadFan" value="5000" min="0" max="50000"> €
+                        
+                        <label>Totale investering:</label>
+                        <input type="number" id="totaleInvestering" value="7000" readonly> €
+                    </div>
+                    
+                    <div>
+                        <h4>Exploitatie</h4>
+                        <label>Energieprijs koeling:</label>
+                        <input type="number" id="energiePrijs" value="0.25" min="0.1" max="0.5" step="0.01"> €/kWh
+                        
+                        <label>Koeldagen per jaar:</label>
+                        <input type="number" id="koelDagen" value="90" min="10" max="180"> dagen
+                        
+                        <label>Klimaatzone factor:</label>
+                        <select id="klimaatzone">
+                            <option value="1.0">Normaal</option>
+                            <option value="1.2">Warm</option>
+                            <option value="1.5">Heet</option>
+                            <option value="0.8">Koel</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h4>Resultaat</h4>
+                        <button onclick="berekenTerugverdientijd()" style="margin-bottom: 15px;">💰 Bereken Terugverdientijd</button>
+                        
+                        <div id="terugverdientijdResultaat" style="padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <!-- Resultaat wordt hier geplaatst -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 5: KLIMAATBEHEERSING -->
+        <div id="klimaat" class="tab-content">
+            <h2>🌡️ Geïntegreerde Klimaatbeheersing</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Temperatuur Beheersing</h3>
+                    <label>Max. dagtemperatuur:</label>
+                    <input type="number" id="maxDagTemp" value="28" min="15" max="40"> °C
+                    
+                    <label>Min. nachttemperatuur:</label>
+                    <input type="number" id="minNachtTemp" value="16" min="5" max="25"> °C
+                    
+                    <label>Ventilatie start temperatuur:</label>
+                    <input type="number" id="ventStartTemp" value="24" min="15" max="35"> °C
+                    
+                    <label>Verwarming nodig bij:</label>
+                    <input type="number" id="verwarmingTemp" value="18" min="5" max="25"> °C
+                    
+                    <label>Shadingsysteem:</label>
+                    <select id="shading">
+                        <option value="geen">Geen</option>
+                        <option value="wit">Wit wassen</option>
+                        <option value="scherm">Binnen scherm</option>
+                        <option value="buitenscherm">Buiten scherm</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>Vochtigheid Beheersing</h3>
+                    <label>Relatieve vochtigheid dag:</label>
+                    <input type="number" id="rvDag" value="75" min="40" max="95"> %
+                    
+                    <label>Relatieve vochtigheid nacht:</label>
+                    <input type="number" id="rvNacht" value="85" min="50" max="98"> %
+                    
+                    <label>Vochtafvoer capaciteit:</label>
+                    <input type="number" id="vochtAfvoer" value="200" min="50" max="1000"> g/m²/h
+                    
+                    <label>Ontvochtiging methode:</label>
+                    <select id="ontvochtiging">
+                        <option value="ventilatie">Ventilatie</option>
+                        <option value="verwarming">Verwarming + ventilatie</option>
+                        <option value="mechanisch">Mechanische ontvochtiging</option>
+                        <option value="absorptie">Absorptie ontvochtiger</option>
+                    </select>
+                    
+                    <label>Condens voorkomen:</label>
+                    <select id="condens">
+                        <option value="ventilatie">Extra ventilatie</option>
+                        <option value="verwarming">Onderhoudsverwarming</option>
+                        <option value="dakventilatie">Dakventilatie</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>CO₂ Beheersing</h3>
+                    <label>CO₂ concentratie:</label>
+                    <select id="co2Niveau">
+                        <option value="400">Buitenlucht (400 ppm)</option>
+                        <option value="800">Standaard (800 ppm)</option>
+                        <option value="1000" selected>Optimaal (1000 ppm)</option>
+                        <option value="1200">Hoog (1200 ppm)</option>
+                        <option value="1500">Zeer hoog (1500 ppm)</option>
+                    </select>
+                    
+                    <label>CO₂ dosering:</label>
+                    <select id="co2Dosering">
+                        <option value="continu">Continu bij belichting</option>
+                        <option value="variabel">Variabel naar lichtniveau</option>
+                        <option value="puls">Puls dosering</option>
+                    </select>
+                    
+                    <label>CO₂ bron:</label>
+                    <select id="co2Bron">
+                        <option value="pure">Pure CO₂ (tank)</option>
+                        <option value="ketel">Warmteketel</option>
+                        <option value="generator">CO₂ generator</option>
+                    </select>
+                    
+                    <label>CO₂ verbruik:</label>
+                    <input type="number" id="co2Verbruik" value="5" min="0" max="50"> kg/100m²/dag
+                    
+                    <button onclick="berekenCO2()">🌿 Bereken CO₂ Behoefte</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Klimaatstrategie per Seizoen</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Seizoen</th>
+                            <th>Ventilatie</th>
+                            <th>Verwarming</th>
+                            <th>Vochtigheid</th>
+                            <th>CO₂</th>
+                            <th>Licht</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Winter</td>
+                            <td>Minimaal (5-10 w/h)</td>
+                            <td>Actief (18-22°C)</td>
+                            <td>Beperkt ventileren</td>
+                            <td>Maximaal (1200 ppm)</td>
+                            <td>Supplementair</td>
+                        </tr>
+                        <tr>
+                            <td>Lente</td>
+                            <td>Gemiddeld (20-40 w/h)</td>
+                            <td>Nachtverwarming</td>
+                            <td>Natuurlijke regulatie</td>
+                            <td>Optimaal (1000 ppm)</td>
+                            <td>Natuurlijk</td>
+                        </tr>
+                        <tr>
+                            <td>Zomer</td>
+                            <td>Maximaal (40-100 w/h)</td>
+                            <td>Geen</td>
+                            <td>Actieve ontvochtiging</td>
+                            <td>Buitenlucht</td>
+                            <td>Shading</td>
+                        </tr>
+                        <tr>
+                            <td>Herfst</td>
+                            <td>Variabel (10-30 w/h)</td>
+                            <td>Dagverwarming</td>
+                            <td>Gecontroleerd</td>
+                            <td>Supplementair</td>
+                            <td>Natuurlijk</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- TAB 6: ENERGIE ANALYSE -->
+        <div id="energie" class="tab-content">
+            <h2>⚡ Energie Analyse & Besparingen</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Energieverbruik Ventilatie</h3>
+                    <label>Aantal ventilatoren:</label>
+                    <input type="number" id="energieVentilatoren" value="4" min="1" max="20">
+                    
+                    <label>Vermogen per ventilator:</label>
+                    <input type="number" id="vermogenVentilator" value="1.5" min="0.1" max="10" step="0.1"> kW
+                    
+                    <label>Draaiuren per dag:</label>
+                    <input type="number" id="draaiUren" value="16" min="0" max="24">
+                    
+                    <label>Efficiëntie klasse:</label>
+                    <select id="efficiëntieKlasse">
+                        <option value="IE1">IE1 (Standard)</option>
+                        <option value="IE2">IE2 (High)</option>
+                        <option value="IE3" selected>IE3 (Premium)</option>
+                        <option value="IE4">IE4 (Super Premium)</option>
+                    </select>
+                    
+                    <button onclick="berekenEnergie()">🔌 Bereken Energieverbruik</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Besparingsmogelijkheden</h3>
+                    <label>Frequentieregelaars:</label>
+                    <select id="frequentieregelaars">
+                        <option value="0">Geen</option>
+                        <option value="20">Basis (20% besparing)</option>
+                        <option value="35">Geavanceerd (35% besparing)</option>
+                    </select>
+                    
+                    <label>Energie terugwinning:</label>
+                    <select id="energieTerugwinning">
+                        <option value="0">Geen</option>
+                        <option value="15">Lucht-lucht WTW (15%)</option>
+                        <option value="25">Warmtepomp (25%)</option>
+                        <option value="40">Geavanceerd systeem (40%)</option>
+                    </select>
+                    
+                    <label>Zonnepanelen oppervlakte:</label>
+                    <input type="number" id="zonnepanelen" value="0" min="0" max="500"> m²
+                    
+                    <label>Windturbines:</label>
+                    <select id="windturbines">
+                        <option value="0">Geen</option>
+                        <option value="1">1 kleine turbine</option>
+                        <option value="2">2 kleine turbines</option>
+                        <option value="5">5 kW systeem</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>Energie Resultaten</h3>
+                    <div id="energieResultaten" style="padding: 15px;">
+                        <p>Jaarlijks verbruik ventilatie: <strong id="jaarVerbruik">-</strong> kWh</p>
+                        <p>Kosten ventilatie: <strong id="kostenVentilatie">-</strong> €/jaar</p>
+                        <p>Besparing door maatregelen: <strong id="besparingMaatregelen">-</strong> €/jaar</p>
+                        <p>CO₂ uitstoot: <strong id="co2Uitstoot">-</strong> kg/jaar</p>
+                        <p>Terugverdientijd investering: <strong id="tvInvestering">-</strong> jaar</p>
+                    </div>
+                    
+                    <div id="energieAdvies" style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                        <h5>💡 Energiebesparing tips:</h5>
+                        <ul style="margin: 5px 0; padding-left: 20px;">
+                            <li>Gebruik frequentieregelaars voor ventilatoren</li>
+                            <li>Optimaliseer nachtventilatie voor free cooling</li>
+                            <li>Overweeg zonnepanelen op serredak</li>
+                            <li>Gebruik energie-efficiënte IE3/IE4 motoren</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Total Cost of Ownership (TCO) Analyse</h3>
+                <div class="grid">
+                    <div>
+                        <h4>Investering (Jaar 0)</h4>
+                        <p>Ventilatiesysteem: <span id="invVentilatie">- €</span></p>
+                        <p>Free cooling systeem: <span id="invFreecooling">- €</span></p>
+                        <p>Klimaatcomputer: <span id="invKlimaat">- €</span></p>
+                        <p>Totale investering: <span id="invTotaal">- €</span></p>
+                    </div>
+                    
+                    <div>
+                        <h4>Exploitatie (per jaar)</h4>
+                        <p>Energie ventilatie: <span id="expEnergie">- €</span></p>
+                        <p>Onderhoud: <span id="expOnderhoud">- €</span></p>
+                        <p>Reserve delen: <span id="expReserve">- €</span></p>
+                        <p>Totale exploitatie: <span id="expTotaal">- €</span></p>
+                    </div>
+                    
+                    <div>
+                        <h4>Besparingen & Opbrengst</h4>
+                        <p>Energiebesparing: <span id="besparingEnergie">- €</span></p>
+                        <p>Opbrengstverhoging gewas: <span id="opbrengstVerhoging">- €</span></p>
+                        <p>Premies/subsidies: <span id="subsidies">- €</span></p>
+                        <p>Netto besparing: <span id="nettoBesparing" style="color: #27ae60;">- €</span></p>
+                    </div>
+                </div>
+                
+                <button onclick="berekenTCO()" style="margin-top: 20px; width: 100%;">📈 Bereken TCO</button>
+            </div>
+        </div>
+        
+        <!-- TAB 7: RAPPORT -->
+        <div id="rapport" class="tab-content">
+            <h2>📄 Serre Ventilatie Rapport</h2>
+            <div class="info-box">
+                <strong>Genereer een professioneel ventilatierapport voor uw serre</strong><br>
+                Inclusief free cooling analyse, energieberekeningen en gewasspecifieke adviezen
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Rapport Opties</h3>
+                    <label>Rapport type:</label>
+                    <select id="rapportType">
+                        <option value="technisch">Technisch rapport</option>
+                        <option value="investering">Investeringsrapport</option>
+                        <option value="subsidie">Subsidieaanvraag</option>
+                        <option value="volledig" selected>Volledig rapport</option>
+                    </select>
+                    
+                    <label>Detailniveau:</label>
+                    <select id="rapportDetail">
+                        <option value="samenvatting">Samenvatting</option>
+                        <option value="normaal" selected>Normaal</option>
+                        <option value="gedetailleerd">Gedetailleerd</option>
+                    </select>
+                    
+                    <label>Extra opties:</label><br>
+                    <label><input type="checkbox" id="inclEnergie" checked> Inclusief energieanalyse</label><br>
+                    <label><input type="checkbox" id="inclFreecooling" checked> Inclusief free cooling</label><br>
+                    <label><input type="checkbox" id="inclGewas" checked> Inclusief gewasadvies</label><br>
+                    <label><input type="checkbox" id="inclKosten" checked> Inclusief kostenanalyse</label><br>
+                    <label><input type="checkbox" id="inclCO2" checked> Inclusief CO₂ berekeningen</label>
+                </div>
+                
+                <div class="card">
+                    <h3>Voorbeeld Rapport</h3>
+                    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 5px; height: 250px; overflow: auto; background: #f8f9fa;">
+                        <h4>Serre Ventilatie Rapport</h4>
+                        <p>Project: <span id="rapportSerre">Serre Ventilatie Project</span></p>
+                        <p>Datum: <span id="rapportDatum">-</span></p>
+                        <p>Serre type: <span id="rapportSerreType">Venlo</span></p>
+                        <p>Gewas: <span id="rapportGewas">Tomaat</span></p>
+                        <hr>
+                        <p><strong>Free cooling potentieel:</strong> <span id="rapportFCPotentieel">Hoog</span></p>
+                        <p><strong>Ventilatie capaciteit:</strong> <span id="rapportVentCap">- m³/h</span></p>
+                        <p><strong>Energiebesparing:</strong> <span id="rapportEnergie">- €/jaar</span></p>
+                        <p>Het volledige rapport wordt hier gegenereerd...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="text-align: center;">
+                <h3>Download Rapport</h3>
+                <p>Klik op de knop om het rapport te genereren en downloaden</p>
+                
+                <button onclick="genereerPDF()" class="download-btn">
+                    <span style="font-size: 24px;">📄</span>
+                    <div>
+                        <div style="font-size: 18px;">Genereer PDF Rapport</div>
+                        <small>Met free cooling & energieanalyse</small>
+                    </div>
+                    <span style="font-size: 24px;">🌿</span>
+                </button>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="printRapport()" class="warning">🖨️ Print Rapport</button>
+                    <button onclick="emailRapport()">📧 Email Rapport</button>
+                    <button onclick="saveProject()" class="success">💾 Opslaan Project</button>
+                    <button onclick="genereerBestellijst()">🛒 Bestellijst</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2024 - Serre Ventilatie Calculator | Landbouw Free Cooling & Klimaatbeheersing</p>
+            <div class="leaf">🌿</div>
+            <p>Ontwikkeld voor professionele serretelers</p>
+        </footer>
+    </div>
+
+    <script>
+        // Globale variabelen voor serre project
+        let serreData = {
+            type: "venlo",
+            lengte: 50,
+            breedte: 10,
+            hoogte: 5,
+            gewas: "tomaat",
+            volume: 0,
+            ventilatie: {},
+            freecooling: {},
+            klimaat: {},
+            energie: {}
+        };
+        
+        // Gewas specifieke data
+        const cropData = {
+            tomaat: {
+                naam: "Tomaat",
+                tempDag: "22-26°C",
+                tempNacht: "16-18°C",
+                luchtvochtigheid: "65-75%",
+                luchtwisselingen: "40-60/h",
+                co2: "800-1200 ppm",
+                licht: "25-35 klux",
+                beschrijving: "Vraagt veel ventilatie voor ziektepreventie"
+            },
+            komkommer: {
+                naam: "Komkommer",
+                tempDag: "24-28°C",
+                tempNacht: "18-20°C",
+                luchtvochtigheid: "75-85%",
+                luchtwisselingen: "30-50/h",
+                co2: "800-1000 ppm",
+                licht: "20-30 klux",
+                beschrijving: "Hoge vochtigheid nodig, gevoelig voor meeldauw"
+            },
+            paprika: {
+                naam: "Paprika",
+                tempDag: "22-26°C",
+                tempNacht: "17-19°C",
+                luchtvochtigheid: "60-70%",
+                luchtwisselingen: "35-55/h",
+                co2: "900-1200 ppm",
+                licht: "25-35 klux",
+                beschrijving: "Matige ventilatie, gevoelig voor bodemziekten"
+            },
+            sla: {
+                naam: "Sla",
+                tempDag: "18-22°C",
+                tempNacht: "12-15°C",
+                luchtvochtigheid: "70-80%",
+                luchtwisselingen: "20-40/h",
+                co2: "600-800 ppm",
+                licht: "15-25 klux",
+                beschrijving: "Lage temperatuur, snelle groei"
+            },
+            aardbei: {
+                naam: "Aardbei",
+                tempDag: "20-24°C",
+                tempNacht: "14-16°C",
+                luchtvochtigheid: "65-75%",
+                luchtwisselingen: "25-45/h",
+                co2: "700-900 ppm",
+                licht: "20-30 klux",
+                beschrijving: "Gevoelig voor schimmel, goede ventilatie nodig"
+            },
+            roos: {
+                naam: "Siergewassen",
+                tempDag: "20-24°C",
+                tempNacht: "16-18°C",
+                luchtvochtigheid: "60-70%",
+                luchtwisselingen: "30-50/h",
+                co2: "800-1000 ppm",
+                licht: "25-40 klux",
+                beschrijving: "Specifieke klimaatbeheersing voor kwaliteit"
+            },
+            kruiden: {
+                naam: "Kruiden",
+                tempDag: "20-25°C",
+                tempNacht: "15-18°C",
+                luchtvochtigheid: "50-65%",
+                luchtwisselingen: "25-40/h",
+                co2: "600-800 ppm",
+                licht: "20-30 klux",
+                beschrijving: "Diverse eisen per kruidensoort"
+            },
+            anders: {
+                naam: "Ander gewas",
+                tempDag: "20-25°C",
+                tempNacht: "15-20°C",
+                luchtvochtigheid: "60-75%",
+                luchtwisselingen: "30-50/h",
+                co2: "800-1000 ppm",
+                licht: "20-30 klux",
+                beschrijving: "Pas parameters aan voor specifiek gewas"
+            }
+        };
+        
+        // Conversie constanten
+        const BTU_TO_KW = 0.00029307107;
+        const KW_TO_BTU = 1 / BTU_TO_KW;
+        
+        // Initialisatie
+        document.addEventListener('DOMContentLoaded', function() {
+            // Stel datum in
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('rapportDatum').textContent = new Date().toLocaleDateString('nl-BE');
+            
+            // Bereken initiële serre volume
+            berekenSerreVolume();
+            
+            // Update gewas informatie
+            updateCropInfo('tomaat');
+            
+            // Update klimaatgrafiek
+            updateClimateGraph();
+            
+            console.log("Serre Ventilatie Calculator geladen");
+        });
+        
+        // Serre type selectie
+        function selectSerreType(type) {
+            serreData.type = type;
+            
+            const serreCards = document.querySelectorAll('.serre-card');
+            serreCards.forEach(card => card.classList.remove('active'));
+            
+            const selectedCard = event.currentTarget;
+            if (selectedCard) selectedCard.classList.add('active');
+            
+            // Update standaard waarden op basis van serre type
+            switch(type) {
+                case 'venlo':
+                    document.getElementById('serreHoogte').value = 5;
+                    document.getElementById('isolatie').value = 'basis';
+                    break;
+                case 'tunnel':
+                    document.getElementById('serreHoogte').value = 4;
+                    document.getElementById('isolatie').value = 'geen';
+                    break;
+                case 'multi':
+                    document.getElementById('serreLengte').value = 100;
+                    document.getElementById('serreBreedte').value = 20;
+                    document.getElementById('serreHoogte').value = 6;
+                    break;
+                case 'glas':
+                    document.getElementById('serreHoogte').value = 5.5;
+                    document.getElementById('isolatie').value = 'geavanceerd';
+                    break;
+            }
+            
+            berekenSerreVolume();
+        }
+        
+        function updateSchaduw() {
+            const slider = document.getElementById('schaduw');
+            const value = document.getElementById('schaduwValue');
+            value.textContent = slider.value + '%';
+        }
+        
+        function berekenSerreVolume() {
+            const lengte = parseFloat(document.getElementById('serreLengte').value) || 50;
+            const breedte = parseFloat(document.getElementById('serreBreedte').value) || 10;
+            const hoogte = parseFloat(document.getElementById('serreHoogte').value) || 5;
+            
+            // Bereken volume (lengte * breedte * hoogte)
+            const volume = lengte * breedte * hoogte;
+            
+            serreData.lengte = lengte;
+            serreData.breedte = breedte;
+            serreData.hoogte = hoogte;
+            serreData.volume = volume;
+            
+            // Oppervlakte
+            const oppervlakte = lengte * breedte;
+            
+            document.getElementById('serreVolume').textContent = volume.toLocaleString('nl-BE');
+            
+            // Update rapport
+            document.getElementById('rapportSerre').textContent = `${serreData.type} Serre - ${oppervlakte} m²`;
+            document.getElementById('rapportSerreType').textContent = serreData.type.charAt(0).toUpperCase() + serreData.type.slice(1);
+            
+            // Bereken ventilatie opnieuw als volume gewijzigd is
+            berekenVentilatie();
+        }
+        
+        // Gewas selectie
+        function selectCrop(crop) {
+            serreData.gewas = crop;
+            
+            const cropOptions = document.querySelectorAll('.crop-option');
+            cropOptions.forEach(option => option.classList.remove('active'));
+            
+            const selectedOption = event.currentTarget;
+            if (selectedOption) selectedOption.classList.add('active');
+            
+            updateCropInfo(crop);
+        }
+        
+        function updateCropInfo(crop) {
+            const data = cropData[crop];
+            const requirementsDiv = document.getElementById('cropRequirements');
+            
+            if (data) {
+                requirementsDiv.innerHTML = `
+                    <h4>${data.naam}</h4>
+                    <p><strong>Dagtemperatuur:</strong> ${data.tempDag}</p>
+                    <p><strong>Nachttemperatuur:</strong> ${data.tempNacht}</p>
+                    <p><strong>Luchtvochtigheid:</strong> ${data.luchtvochtigheid}</p>
+                    <p><strong>Luchtwisselingen:</strong> ${data.luchtwisselingen}</p>
+                    <p><strong>CO₂ niveau:</strong> ${data.co2}</p>
+                    <p><strong>Lichtbehoefte:</strong> ${data.licht}</p>
+                    <p><em>${data.beschrijving}</em></p>
+                `;
+                
+                // Update klimaatdoelen
+                const tempRange = data.tempDag.split('-')[0];
+                document.getElementById('targetTemp').textContent = tempRange.replace('°C', '') + '°C';
+                document.getElementById('targetHumidity').textContent = data.luchtvochtigheid.split('-')[0];
+                
+                // Update rapport
+                document.getElementById('rapportGewas').textContent = data.naam;
+            }
+        }
+        
+        function updateClimateGraph() {
+            const tempLine = document.getElementById('tempLine');
+            const humidityLine = document.getElementById('humidityLine');
+            
+            // Simuleer dag/nacht cyclus
+            tempLine.style.width = '70%';
+            humidityLine.style.width = '60%';
+        }
+        
+        // Ventilatie berekeningen
+        function updateVentilatieType() {
+            const type = document.getElementById('ventilatieType').value;
+            
+            if (type === 'natuurlijk') {
+                document.getElementById('ventilatorenAantal').value = 0;
+                document.getElementById('ramenAantal').value = 10;
+            } else if (type === 'mechanisch') {
+                document.getElementById('ventilatorenAantal').value = 4;
+                document.getElementById('ramenAantal').value = 0;
+            } else {
+                document.getElementById('ventilatorenAantal').value = 4;
+                document.getElementById('ramenAantal').value = 10;
+            }
+            
+            berekenVentilatie();
+        }
+        
+        function berekenVentilatie() {
+            const volume = serreData.volume;
+            const luchtwisselingen = parseFloat(document.getElementById('luchtwisselingen').value) || 30;
+            const windFactor = parseFloat(document.getElementById('windFactor').value) || 1.0;
+            const tempVerschil = parseFloat(document.getElementById('tempVerschilVent').value) || 5;
+            
+            // Benodigd totaal debiet
+            const totaalDebiet = volume * luchtwisselingen * windFactor;
+            
+            // Natuurlijke ventilatie capaciteit
+            const ramenAantal = parseInt(document.getElementById('ramenAantal').value) || 0;
+            const raamOpening = parseFloat(document.getElementById('raamOpening').value) || 0.5;
+            const natuurlijkDebiet = ramenAantal * raamOpening * 500 * Math.sqrt(tempVerschil) * windFactor;
+            
+            // Mechanische ventilatie nodig
+            const mechanischDebiet = Math.max(0, totaalDebiet - natuurlijkDebiet);
+            
+            // Ventilator dimensionering
+            const ventilatorenAantal = parseInt(document.getElementById('ventilatorenAantal').value) || 0;
+            const debietPerVentilator = ventilatorenAantal > 0 ? mechanischDebiet / ventilatorenAantal : 0;
+            
+            // Diameter berekenen (bij 4 m/s)
+            const snelheid = 4; // m/s
+            const debiet_m3s = debietPerVentilator / 3600;
+            const oppervlakte_m2 = debiet_m3s / snelheid;
+            const diameter_m = Math.sqrt((4 * oppervlakte_m2) / Math.PI);
+            const diameter_mm = Math.ceil(diameter_m * 1000 / 50) * 50; // Afronden op 50mm
+            
+            // Specifiek debiet per m²
+            const oppervlakte = serreData.lengte * serreData.breedte;
+            const specifiekDebiet = totaalDebiet / oppervlakte;
+            
+            // Update resultaten
+            document.getElementById('totaalDebiet').textContent = Math.round(totaalDebiet).toLocaleString('nl-BE');
+            document.getElementById('natuurlijkDebiet').textContent = Math.round(natuurlijkDebiet).toLocaleString('nl-BE');
+            document.getElementById('mechanischDebiet').textContent = Math.round(mechanischDebiet).toLocaleString('nl-BE');
+            document.getElementById('ventilatorDiameter').textContent = diameter_mm;
+            document.getElementById('specifiekDebiet').textContent = Math.round(specifiekDebiet);
+            
+            // Status bepalen
+            const statusDiv = document.getElementById('ventilatieStatus');
+            let statusHTML = '';
+            
+            if (mechanischDebiet <= 0) {
+                statusHTML = '<div class="status-ok">✅ Voldoende natuurlijke ventilatie</div>';
+            } else if (mechanischDebiet < totaalDebiet * 0.3) {
+                statusHTML = '<div class="status-ok">✅ Goede combinatie natuurlijk/mechanisch</div>';
+            } else if (mechanischDebiet < totaalDebiet * 0.7) {
+                statusHTML = '<div class="status-warning">⚠️ Veel mechanische ventilatie nodig</div>';
+            } else {
+                statusHTML = '<div class="status-error">❌ Te weinig natuurlijke ventilatie mogelijk</div>';
+            }
+            
+            statusDiv.innerHTML = statusHTML;
+            
+            // Opslaan in serreData
+            serreData.ventilatie = {
+                totaalDebiet: totaalDebiet,
+                natuurlijkDebiet: natuurlijkDebiet,
+                mechanischDebiet: mechanischDebiet,
+                luchtwisselingen: luchtwisselingen,
+                ventilatorDiameter: diameter_mm
+            };
+            
+            // Update rapport
+            document.getElementById('rapportVentCap').textContent = Math.round(totaalDebiet).toLocaleString('nl-BE') + ' m³/h';
+            
+            // Update free cooling berekening
+            updateNachtMultiplier();
+        }
+        
+        // Free Cooling functies
+        function updateKoelvermogenFromBTU() {
+            const btu = parseFloat(document.getElementById('koelVermogenBTU').value) || 50000;
+            const kW = btu * BTU_TO_KW;
+            document.getElementById('koelVermogenkW').value = kW.toFixed(2);
+            berekenFreeCooling();
+        }
+        
+        function updateKoelvermogenFromkW() {
+            const kW = parseFloat(document.getElementById('koelVermogenkW').value) || 14.65;
+            const btu = kW * KW_TO_BTU;
+            document.getElementById('koelVermogenBTU').value = Math.round(btu);
+            berekenFreeCooling();
+        }
+        
+        function updateNachtMultiplier() {
+            const slider = document.getElementById('nachtMultiplier');
+            const value = document.getElementById('nachtMultiplierValue');
+            value.textContent = slider.value + 'x';
+            berekenFreeCooling();
+        }
+        
+        function berekenFreeCooling() {
+            const totaalDebiet = serreData.ventilatie?.totaalDebiet || 0;
+            const koelVermogenkW = parseFloat(document.getElementById('koelVermogenkW').value) || 14.65;
+            const koelVermogenW = koelVermogenkW * 1000;
+            const tempVerschil = parseFloat(document.getElementById('tempVerschilFC').value) || 10;
+            const koelUren = parseFloat(document.getElementById('koelUren').value) || 8;
+            const multiplier = parseFloat(document.getElementById('nachtMultiplier').value) || 3;
+            
+            // Benodigd nachtdebiet voor free cooling
+            // Q = m * c * ΔT -> m = Q / (c * ΔT)
+            // Voor lucht: c ≈ 0.34 Wh/(m³·K)
+            const benodigdDebiet = koelVermogenW / (0.34 * tempVerschil); // m³/h
+            
+            // Nachtdebiet is groter dan dagdebiet
+            const nachtDebiet = Math.max(totaalDebiet * multiplier, benodigdDebiet);
+            
+            // Ventilator diameter voor free cooling
+            const snelheid = 3; // m/s voor nachtventilatie
+            const debiet_m3s = nachtDebiet / 3600;
+            const oppervlakte_m2 = debiet_m3s / snelheid;
+            const diameter_m = Math.sqrt((4 * oppervlakte_m2) / Math.PI);
+            const diameter_mm = Math.ceil(diameter_m * 1000 / 50) * 50;
+            
+            // Koelenergie per dag
+            const koelEnergie = (koelVermogenkW * koelUren);
+            
+            // Jaarlijkse besparing
+            const koelDagen = parseInt(document.getElementById('koelDagen').value) || 90;
+            const energiePrijs = parseFloat(document.getElementById('energiePrijs').value) || 0.25;
+            const klimaatzone = parseFloat(document.getElementById('klimaatzone').value) || 1.0;
+            const jaarlijkseBesparing = koelEnergie * koelDagen * energiePrijs * klimaatzone;
+            
+            // CO₂ reductie (0.5 kg CO₂ per kWh)
+            const co2Reductie = koelEnergie * koelDagen * 0.5;
+            
+            // Update resultaten
+            document.getElementById('nachtDebiet').textContent = Math.round(nachtDebiet).toLocaleString('nl-BE');
+            document.getElementById('dagDebiet').textContent = Math.round(totaalDebiet).toLocaleString('nl-BE');
+            document.getElementById('fcDiameter').textContent = diameter_mm + ' mm';
+            document.getElementById('koelEnergie').textContent = koelEnergie.toFixed(1);
+            document.getElementById('fcBesparing').textContent = '€' + jaarlijkseBesparing.toFixed(0);
+            document.getElementById('co2Reductie').textContent = Math.round(co2Reductie);
+            
+            // Update advies
+            const adviesDiv = document.getElementById('fcAdvies');
+            let adviesHTML = '<h5>💡 Free Cooling Advies:</h5>';
+            
+            const koelVermogenBTU = parseFloat(document.getElementById('koelVermogenBTU').value) || 50000;
+            
+            if (nachtDebiet > totaalDebiet * 2) {
+                adviesHTML += '<p><strong>Hoge free cooling potentie!</strong></p>';
+                adviesHTML += '<ul>';
+                adviesHTML += `<li>Koelvermogen: ${koelVermogenkW.toFixed(2)} kW (${Math.round(koelVermogenBTU)} BTU/h)</li>`;
+                adviesHTML += `<li>Nachtdebiet: ${Math.round(nachtDebiet).toLocaleString('nl-BE')} m³/h</li>`;
+                adviesHTML += `<li>Ventilator diameter: ${diameter_mm} mm aanbevolen</li>`;
+                adviesHTML += `<li>Pad & Fan systeem: Aanbevolen</li>`;
+                adviesHTML += '</ul>';
+                document.getElementById('rapportFCPotentieel').textContent = 'Hoog';
+            } else {
+                adviesHTML += `<p>Matige free cooling potentie voor ${koelVermogenkW.toFixed(2)} kW. Standaard dimensionering voldoende.</p>`;
+                document.getElementById('rapportFCPotentieel').textContent = 'Matig';
+            }
+            
+            adviesHTML += `<p><strong>Besparing:</strong> €${jaarlijkseBesparing.toFixed(0)}/jaar mogelijk</p>`;
+            
+            adviesDiv.innerHTML = adviesHTML;
+            
+            // Update totale investering
+            const meerprijs = parseFloat(document.getElementById('meerprijsVentilatoren').value) || 2000;
+            const kostenPadFan = parseFloat(document.getElementById('kostenPadFan').value) || 5000;
+            document.getElementById('totaleInvestering').value = meerprijs + kostenPadFan;
+            
+            // Update rapport energiebesparing
+            document.getElementById('rapportEnergie').textContent = '€' + jaarlijkseBesparing.toFixed(0) + '/jaar';
+            
+            // Opslaan in serreData
+            serreData.freecooling = {
+                nachtDebiet: nachtDebiet,
+                koelVermogenkW: koelVermogenkW,
+                koelVermogenBTU: koelVermogenBTU,
+                jaarlijkseBesparing: jaarlijkseBesparing,
+                diameter: diameter_mm
+            };
+        }
+        
+        function berekenTerugverdientijd() {
+            const totaleInvestering = parseFloat(document.getElementById('totaleInvestering').value) || 7000;
+            const jaarlijkseBesparing = serreData.freecooling?.jaarlijkseBesparing || 1000;
+            
+            if (jaarlijkseBesparing <= 0) {
+                document.getElementById('terugverdientijdResultaat').innerHTML = 
+                    '<p style="color: #e74c3c;">Geen free cooling potentie berekend. Bereken eerst free cooling.</p>';
+                return;
+            }
+            
+            const terugverdientijd = totaleInvestering / jaarlijkseBesparing;
+            
+            let beoordeling = '';
+            let kleur = '';
+            
+            if (terugverdientijd < 3) {
+                beoordeling = 'Uitstekende investering!';
+                kleur = '#27ae60';
+            } else if (terugverdientijd < 5) {
+                beoordeling = 'Goede investering';
+                kleur = '#f39c12';
+            } else if (terugverdientijd < 8) {
+                beoordeling = 'Acceptabele investering';
+                kleur = '#f39c12';
+            } else {
+                beoordeling = 'Lange terugverdientijd';
+                kleur = '#e74c3c';
+            }
+            
+            document.getElementById('terugverdientijdResultaat').innerHTML = `
+                <h4>💰 Terugverdientijd Analyse</h4>
+                <p>Totale investering: €${totaleInvestering.toLocaleString('nl-BE')}</p>
+                <p>Jaarlijkse besparing: €${jaarlijkseBesparing.toFixed(0)}</p>
+                <p><strong>Terugverdientijd:</strong> ${terugverdientijd.toFixed(1)} jaar</p>
+                <p style="color: ${kleur}; font-weight: bold;">${beoordeling}</p>
+                <p><small>Extra voordelen: betere gewaskwaliteit, ziektepreventie, klimaatbeheersing</small></p>
+            `;
+        }
+        
+        // Energie analyse
+        function berekenEnergie() {
+            const ventilatoren = parseInt(document.getElementById('energieVentilatoren').value) || 4;
+            const vermogen = parseFloat(document.getElementById('vermogenVentilator').value) || 1.5;
+            const draaiUren = parseFloat(document.getElementById('draaiUren').value) || 16;
+            const efficiëntie = document.getElementById('efficiëntieKlasse').value;
+            
+            // Basis energieverbruik
+            let jaarlijksVerbruik = ventilatoren * vermogen * draaiUren * 365;
+            
+            // Efficiëntie correctie
+            let efficiëntieFactor = 1.0;
+            switch(efficiëntie) {
+                case 'IE1': efficiëntieFactor = 1.0; break;
+                case 'IE2': efficiëntieFactor = 0.9; break;
+                case 'IE3': efficiëntieFactor = 0.85; break;
+                case 'IE4': efficiëntieFactor = 0.8; break;
+            }
+            
+            jaarlijksVerbruik *= efficiëntieFactor;
+            
+            // Besparingen door maatregelen
+            const frequentieRegelaar = parseInt(document.getElementById('frequentieregelaars').value) || 0;
+            const energieTerugwinning = parseInt(document.getElementById('energieTerugwinning').value) || 0;
+            const zonnepanelen = parseFloat(document.getElementById('zonnepanelen').value) || 0;
+            
+            let besparing = 0;
+            if (frequentieRegelaar > 0) {
+                besparing += jaarlijksVerbruik * (frequentieRegelaar / 100);
+            }
+            if (energieTerugwinning > 0) {
+                besparing += jaarlijksVerbruik * (energieTerugwinning / 100);
+            }
+            
+            // Zonnepanelen opbrengst (150 kWh/m²/jaar)
+            const zonneOpbrengst = zonnepanelen * 150;
+            
+            // Netto verbruik en kosten
+            const energiePrijs = 0.25; // €/kWh
+            const nettoVerbruik = jaarlijksVerbruik - besparing - zonneOpbrengst;
+            const kosten = nettoVerbruik * energiePrijs;
+            const besparingKosten = besparing * energiePrijs;
+            
+            // CO₂ uitstoot (0.5 kg per kWh)
+            const co2Uitstoot = nettoVerbruik * 0.5;
+            
+            // Update resultaten
+            document.getElementById('jaarVerbruik').textContent = Math.round(jaarlijksVerbruik).toLocaleString('nl-BE');
+            document.getElementById('kostenVentilatie').textContent = '€' + Math.round(kosten).toLocaleString('nl-BE');
+            document.getElementById('besparingMaatregelen').textContent = '€' + Math.round(besparingKosten).toLocaleString('nl-BE');
+            document.getElementById('co2Uitstoot').textContent = Math.round(co2Uitstoot).toLocaleString('nl-BE');
+            
+            // Investering terugverdientijd (geschat)
+            const investering = 5000; // Geschatte investering maatregelen
+            const tvInvestering = investering / besparingKosten;
+            document.getElementById('tvInvestering').textContent = tvInvestering.toFixed(1);
+            
+            // Opslaan in serreData
+            serreData.energie = {
+                jaarlijksVerbruik: jaarlijksVerbruik,
+                kosten: kosten,
+                besparing: besparingKosten,
+                co2Uitstoot: co2Uitstoot
+            };
+        }
+        
+        // CO₂ berekening
+        function berekenCO2() {
+            const oppervlakte = serreData.lengte * serreData.breedte;
+            const co2Verbruik = parseFloat(document.getElementById('co2Verbruik').value) || 5;
+            
+            // Dagelijks CO₂ verbruik
+            const dagelijksVerbruik = (oppervlakte / 100) * co2Verbruik;
+            
+            // Jaarlijks verbruik (geschat 200 teeltdagen)
+            const jaarlijksVerbruik = dagelijksVerbruik * 200;
+            
+            alert(`CO₂ behoefte voor ${oppervlakte} m²:\n` +
+                  `Dagelijks: ${dagelijksVerbruik.toFixed(1)} kg\n` +
+                  `Jaarlijks: ${jaarlijksVerbruik.toFixed(0)} kg\n` +
+                  `Kosten (€1/kg): €${jaarlijksVerbruik.toFixed(0)}/jaar`);
+        }
+        
+        // TCO Analyse
+        function berekenTCO() {
+            // Investering
+            const invVentilatie = 15000;
+            const invFreecooling = parseFloat(document.getElementById('totaleInvestering').value) || 7000;
+            const invKlimaat = 5000;
+            const invTotaal = invVentilatie + invFreecooling + invKlimaat;
+            
+            // Exploitatie (per jaar)
+            const expEnergie = serreData.energie?.kosten || 5000;
+            const expOnderhoud = 2000;
+            const expReserve = 1000;
+            const expTotaal = expEnergie + expOnderhoud + expReserve;
+            
+            // Besparingen
+            const besparingEnergie = serreData.freecooling?.jaarlijkseBesparing || 1000;
+            const opbrengstVerhoging = besparingEnergie * 3; // Geschat: 3x energiebesparing
+            const subsidies = invTotaal * 0.3; // 30% subsidie
+            const nettoBesparing = besparingEnergie + opbrengstVerhoging + subsidies - expTotaal;
+            
+            // Update display
+            document.getElementById('invVentilatie').textContent = '€' + invVentilatie.toLocaleString('nl-BE');
+            document.getElementById('invFreecooling').textContent = '€' + invFreecooling.toLocaleString('nl-BE');
+            document.getElementById('invKlimaat').textContent = '€' + invKlimaat.toLocaleString('nl-BE');
+            document.getElementById('invTotaal').textContent = '€' + invTotaal.toLocaleString('nl-BE');
+            
+            document.getElementById('expEnergie').textContent = '€' + Math.round(expEnergie).toLocaleString('nl-BE');
+            document.getElementById('expOnderhoud').textContent = '€' + expOnderhoud.toLocaleString('nl-BE');
+            document.getElementById('expReserve').textContent = '€' + expReserve.toLocaleString('nl-BE');
+            document.getElementById('expTotaal').textContent = '€' + expTotaal.toLocaleString('nl-BE');
+            
+            document.getElementById('besparingEnergie').textContent = '€' + Math.round(besparingEnergie).toLocaleString('nl-BE');
+            document.getElementById('opbrengstVerhoging').textContent = '€' + Math.round(opbrengstVerhoging).toLocaleString('nl-BE');
+            document.getElementById('subsidies').textContent = '€' + Math.round(subsidies).toLocaleString('nl-BE');
+            document.getElementById('nettoBesparing').textContent = '€' + Math.round(nettoBesparing).toLocaleString('nl-BE');
+            
+            // Toon resultaat
+            alert(`TCO Analyse:\n\n` +
+                  `Investering: €${invTotaal.toLocaleString('nl-BE')}\n` +
+                  `Jaarlijkse exploitatie: €${expTotaal.toLocaleString('nl-BE')}\n` +
+                  `Jaarlijkse netto besparing: €${nettoBesparing.toLocaleString('nl-BE')}\n` +
+                  `Terugverdientijd: ${(invTotaal / nettoBesparing).toFixed(1)} jaar`);
+        }
+        
+        // PDF Rapport genereren
+        function genereerPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // PDF metadata
+            doc.setProperties({
+                title: 'Serre Ventilatie Rapport - ' + serreData.type,
+                subject: 'Free Cooling & Klimaatbeheersing',
+                author: 'Serre Ventilatie Calculator',
+                keywords: 'serre, landbouw, free cooling, ventilatie, klimaat, BTU/h'
+            });
+            
+            // Titelpagina
+            doc.setFontSize(24);
+            doc.setTextColor(30, 86, 49);
+            doc.text('SERRE VENTILATIE RAPPORT', 105, 40, { align: 'center' });
+            doc.setFontSize(16);
+            doc.text('Free Cooling & Klimaatbeheersing', 105, 55, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text('Landbouw Optimalisatie', 105, 65, { align: 'center' });
+            
+            // Serre icon
+            doc.setFontSize(48);
+            doc.setTextColor(39, 174, 96);
+            doc.text('🌱', 105, 90, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Serre Type: ' + serreData.type.toUpperCase(), 105, 115, { align: 'center' });
+            doc.text('Gewas: ' + cropData[serreData.gewas].naam, 105, 125, { align: 'center' });
+            doc.text('Oppervlakte: ' + (serreData.lengte * serreData.breedte) + ' m²', 105, 135, { align: 'center' });
+            
+            // Projectgegevens
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.setTextColor(30, 86, 49);
+            doc.text('Serre Specificaties', 20, 30);
+            
+            doc.setFontSize(11);
+            
+            const serreInfo = [
+                ['Serre Type:', serreData.type.charAt(0).toUpperCase() + serreData.type.slice(1)],
+                ['Lengte:', serreData.lengte + ' m'],
+                ['Breedte:', serreData.breedte + ' m'],
+                ['Hoogte:', serreData.hoogte + ' m'],
+                ['Volume:', serreData.volume.toLocaleString('nl-BE') + ' m³'],
+                ['Oppervlakte:', (serreData.lengte * serreData.breedte).toLocaleString('nl-BE') + ' m²'],
+                ['Gewas:', cropData[serreData.gewas].naam],
+                ['Oriëntatie:', document.getElementById('orientatie').value]
+            ];
+            
+            let y = 45;
+            serreInfo.forEach(info => {
+                doc.text(info[0], 20, y);
+                doc.text(info[1], 80, y);
+                y += 8;
+            });
+            
+            // Ventilatie berekeningen
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.text('Ventilatie Analyse', 20, 30);
+            
+            if (serreData.ventilatie) {
+                const ventData = [
+                    ['Totaal debiet nodig:', Math.round(serreData.ventilatie.totaalDebiet).toLocaleString('nl-BE') + ' m³/h'],
+                    ['Natuurlijke ventilatie:', Math.round(serreData.ventilatie.natuurlijkDebiet).toLocaleString('nl-BE') + ' m³/h'],
+                    ['Mechanische ventilatie:', Math.round(serreData.ventilatie.mechanischDebiet).toLocaleString('nl-BE') + ' m³/h'],
+                    ['Luchtwisselingen:', serreData.ventilatie.luchtwisselingen + '/h'],
+                    ['Ventilator diameter:', serreData.ventilatie.ventilatorDiameter + ' mm']
+                ];
+                
+                y = 45;
+                ventData.forEach(data => {
+                    doc.text(data[0], 20, y);
+                    doc.text(data[1], 120, y);
+                    y += 10;
+                });
+            }
+            
+            // Free Cooling analyse
+            if (serreData.freecooling) {
+                doc.addPage();
+                doc.setFontSize(18);
+                doc.text('Free Cooling Analyse', 20, 30);
+                
+                const fcData = [
+                    ['Koelvermogen:', serreData.freecooling.koelVermogenkW.toFixed(2) + ' kW (' + serreData.freecooling.koelVermogenBTU + ' BTU/h)'],
+                    ['Nachtdebiet:', Math.round(serreData.freecooling.nachtDebiet).toLocaleString('nl-BE') + ' m³/h'],
+                    ['Aanbevolen diameter:', serreData.freecooling.diameter + ' mm'],
+                    ['Jaarlijkse besparing:', '€' + serreData.freecooling.jaarlijkseBesparing.toFixed(0)],
+                    ['Omrekenformule:', '1 BTU/h = 0.00029307107 kW']
+                ];
+                
+                y = 45;
+                fcData.forEach(data => {
+                    doc.text(data[0], 20, y);
+                    doc.text(data[1], 120, y);
+                    y += 10;
+                });
+                
+                // Advies sectie
+                y += 5;
+                doc.setFontSize(14);
+                doc.text('Free Cooling Advies:', 20, y);
+                y += 10;
+                
+                doc.setFontSize(11);
+                const adviesText = serreData.freecooling.nachtDebiet > (serreData.ventilatie?.totaalDebiet || 0) * 2 ? 
+                    'Hoge free cooling potentie gedetecteerd! Overweeg grotere ventilatoren en pad & fan systeem voor optimale klimaatbeheersing.' :
+                    'Matige free cooling potentie. Standaard dimensionering voldoende voor basis klimaatbeheersing.';
+                
+                const lines = doc.splitTextToSize(adviesText, 170);
+                doc.text(lines, 20, y);
+            }
+            
+            // Energie analyse
+            if (serreData.energie) {
+                doc.addPage();
+                doc.setFontSize(18);
+                doc.text('Energie Analyse', 20, 30);
+                
+                const energieData = [
+                    ['Jaarlijks verbruik:', Math.round(serreData.energie.jaarlijksVerbruik).toLocaleString('nl-BE') + ' kWh'],
+                    ['Energiekosten:', '€' + Math.round(serreData.energie.kosten).toLocaleString('nl-BE')],
+                    ['Besparingen:', '€' + Math.round(serreData.energie.besparing).toLocaleString('nl-BE') + '/jaar'],
+                    ['CO₂ uitstoot:', Math.round(serreData.energie.co2Uitstoot).toLocaleString('nl-BE') + ' kg/jaar']
+                ];
+                
+                y = 45;
+                energieData.forEach(data => {
+                    doc.text(data[0], 20, y);
+                    doc.text(data[1], 120, y);
+                    y += 10;
+                });
+            }
+            
+            // Gewasadvies
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.text('Gewas Specifiek Advies', 20, 30);
+            
+            const crop = cropData[serreData.gewas];
+            doc.setFontSize(11);
+            
+            const cropAdvies = [
+                ['Gewas:', crop.naam],
+                ['Optimale dagtemperatuur:', crop.tempDag],
+                ['Optimale nachttemperatuur:', crop.tempNacht],
+                ['Luchtvochtigheid:', crop.luchtvochtigheid],
+                ['Luchtwisselingen:', crop.luchtwisselingen],
+                ['CO₂ niveau:', crop.co2],
+                ['Lichtbehoefte:', crop.licht],
+                ['Beschrijving:', crop.beschrijving]
+            ];
+            
+            y = 45;
+            cropAdvies.forEach(info => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(info[0], 20, y);
+                doc.setFont('helvetica', 'normal');
+                
+                if (info[0] === 'Beschrijving:') {
+                    const lines = doc.splitTextToSize(info[1], 150);
+                    doc.text(lines, 20, y + 5);
+                    y += (lines.length * 6) + 5;
+                } else {
+                    doc.text(info[1], 80, y);
+                    y += 10;
+                }
+            });
+            
+            // Conclusie
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.text('Conclusie & Aanbevelingen', 20, 30);
+            
+            doc.setFontSize(11);
+            const conclusie = [
+                'Op basis van de analyse worden de volgende aanbevelingen gedaan:',
+                '',
+                '1. Ventilatiesysteem: ' + (serreData.ventilatie?.mechanischDebiet > 0 ? 
+                    'Combineer natuurlijke en mechanische ventilatie voor optimaal resultaat.' : 
+                    'Natuurlijke ventilatie is voldoende.'),
+                '',
+                '2. Free Cooling: ' + (serreData.freecooling?.nachtDebiet > (serreData.ventilatie?.totaalDebiet || 0) * 2 ?
+                    'Sterk aanbevolen vanwege hoge besparingspotentie.' :
+                    'Overweeg basic free cooling voor beperkte besparing.'),
+                '',
+                '3. Klimaatbeheersing: Implementeer het aanbevolen klimaatregime voor ' + crop.naam,
+                '',
+                '4. Monitoring: Installeer klimaatmonitoring voor optimale sturing',
+                '',
+                '5. Onderhoud: Plan regelmatig onderhoud voor maximale efficiëntie'
+            ];
+            
+            y = 45;
+            conclusie.forEach(line => {
+                if (line === '') {
+                    y += 5;
+                } else {
+                    const lines = doc.splitTextToSize(line, 170);
+                    doc.text(lines, 20, y);
+                    y += (lines.length * 6) + 2;
+                }
+            });
+            
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Pagina ${i} van ${pageCount}`, 105, 290, { align: 'center' });
+                doc.setTextColor(39, 174, 96);
+                doc.text('🌿', 200, 290);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Serre Ventilatie Calculator - Landbouw Free Cooling', 105, 295, { align: 'center' });
+                doc.text('BTU/h ↔ kW conversie voor professionele klimaatbeheersing', 105, 300, { align: 'center' });
+            }
+            
+            // Opslaan PDF
+            const bestandsnaam = `Serre_Ventilatie_${serreData.type}_${serreData.gewas}_${new Date().toISOString().slice(0,10)}.pdf`;
+            doc.save(bestandsnaam);
+            
+            alert("PDF rapport gegenereerd en gedownload!");
+        }
+        
+        // Andere functies
+        function openTab(evt, tabName) {
+            const tabcontents = document.querySelectorAll('.tab-content');
+            const tablinks = document.querySelectorAll('.tab');
+            
+            tabcontents.forEach(tab => tab.classList.remove('active'));
+            tablinks.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+        
+        function printRapport() {
+            alert("Voorbereiden voor printen... Druk op Ctrl+P om te printen.");
+            setTimeout(() => window.print(), 500);
+        }
+        
+        function emailRapport() {
+            alert("Email functionaliteit zou hier het rapport als PDF bijlage meesturen.");
+        }
+        
+        function saveProject() {
+            // Simuleer opslaan naar localStorage
+            localStorage.setItem('serreVentilatieProject', JSON.stringify(serreData));
+            alert("Project opgeslagen!");
+        }
+        
+        function genereerBestellijst() {
+            alert("Bestellijst gegenereerd! Deze wordt opgenomen in het volgende rapport.");
+        }
+    </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW:', reg.scope))
+        .catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
+</body>
+</html>
